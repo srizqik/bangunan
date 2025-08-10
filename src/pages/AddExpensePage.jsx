@@ -1,129 +1,185 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '../services/supabaseClient';
+import { supabase } from '@/services/supabaseClient';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { format } from "date-fns";
+import { CalendarIcon } from "lucide-react";
+import { toast } from "sonner";
+
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+
+const formSchema = z.object({
+  jenis_pengeluaran: z.string().min(1, "Jenis pengeluaran harus dipilih."),
+  deskripsi: z.string().optional(),
+  biaya: z.coerce.number().min(1, "Biaya harus lebih dari 0."),
+  tanggal: z.date({ required_error: "Tanggal harus diisi." }),
+  foto: z.instanceof(File).optional(),
+});
 
 const AddExpensePage = () => {
-  const [jenis, setJenis] = useState('Material Bangunan');
-  const [deskripsi, setDeskripsi] = useState('');
-  const [biaya, setBiaya] = useState('');
-  const [tanggal, setTanggal] = useState(new Date().toISOString().slice(0, 10)); // Default to today
-  const [foto, setFoto] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-
   const navigate = useNavigate();
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const form = useForm({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      jenis_pengeluaran: "Material Bangunan",
+      deskripsi: "",
+      biaya: 0,
+      tanggal: new Date(),
+    },
+  });
 
-    if (!biaya || !tanggal) {
-      setError('Biaya dan Tanggal wajib diisi.');
-      return;
-    }
-
+  const onSubmit = async (values) => {
     setLoading(true);
-    setError(null);
-
     try {
       let imageUrl = null;
-
-      // 1. Handle file upload
-      if (foto) {
-        const fileExt = foto.name.split('.').pop();
+      if (values.foto) {
+        const fileExt = values.foto.name.split('.').pop();
         const fileName = `${Date.now()}.${fileExt}`;
         const filePath = `public/${fileName}`;
-
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('expense-photos')
-          .upload(filePath, foto);
-
-        if (uploadError) {
-          throw uploadError;
-        }
-
-        // Get public URL
-        const { data: urlData } = supabase.storage
-          .from('expense-photos')
-          .getPublicUrl(filePath);
-
+        const { error: uploadError } = await supabase.storage.from('expense-photos').upload(filePath, values.foto);
+        if (uploadError) throw uploadError;
+        const { data: urlData } = supabase.storage.from('expense-photos').getPublicUrl(filePath);
         imageUrl = urlData.publicUrl;
       }
 
-      // 2. Insert data into database
-      const { data, error: insertError } = await supabase
+      const { error: insertError } = await supabase
         .from('expenses')
         .insert([{
-          jenis_pengeluaran: jenis,
-          deskripsi,
-          biaya: parseFloat(biaya),
-          tanggal,
+          jenis_pengeluaran: values.jenis_pengeluaran,
+          deskripsi: values.deskripsi,
+          biaya: values.biaya,
+          tanggal: format(values.tanggal, "yyyy-MM-dd"),
           image_url: imageUrl,
-         }]);
+        }]);
 
-      if (insertError) {
-        throw insertError;
-      }
+      if (insertError) throw insertError;
 
-      // 3. Success: clear form and navigate
-      alert('Pengeluaran berhasil disimpan!');
+      toast.success("Pengeluaran berhasil disimpan!");
       navigate('/');
 
     } catch (error) {
       console.error('Error saving expense:', error);
-      setError(error.message || 'Terjadi kesalahan saat menyimpan data.');
+      toast.error("Gagal menyimpan pengeluaran.", {
+        description: error.message,
+      });
     } finally {
       setLoading(false);
     }
   };
 
-  const handleFileChange = (e) => {
-    if (e.target.files && e.target.files[0]) {
-      setFoto(e.target.files[0]);
-    }
-  };
-
-  const formInputClass = "mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100";
-  const formLabelClass = "block text-sm font-medium text-gray-700";
-
   return (
-    <div className="bg-white p-8 rounded-lg shadow-md max-w-2xl mx-auto">
-      <h1 className="text-3xl font-bold mb-6 text-gray-800">Tambah Pengeluaran Baru</h1>
-      {error && <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">{error}</div>}
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div>
-          <label htmlFor="jenis-pengeluaran" className={formLabelClass}>Jenis Pengeluaran</label>
-          <select id="jenis-pengeluaran" value={jenis} onChange={(e) => setJenis(e.target.value)} className={formInputClass} disabled={loading}>
-            <option>Material Bangunan</option>
-            <option>Upah Tukang</option>
-            <option>Instalasi Listrik</option>
-            <option>Konsumsi</option>
-            <option>Tidak Terduga</option>
-            <option>Biaya Tambahan</option>
-          </select>
-        </div>
-        <div>
-          <label htmlFor="deskripsi" className={formLabelClass}>Deskripsi</label>
-          <textarea id="deskripsi" rows="3" value={deskripsi} onChange={(e) => setDeskripsi(e.target.value)} className={formInputClass} placeholder="Contoh: Beli 10 sak semen tiga roda" disabled={loading}></textarea>
-        </div>
-        <div>
-          <label htmlFor="biaya" className={formLabelClass}>Biaya</label>
-          <input type="number" id="biaya" value={biaya} onChange={(e) => setBiaya(e.target.value)} className={formInputClass} placeholder="Contoh: 550000" required disabled={loading} />
-        </div>
-        <div>
-          <label htmlFor="tanggal" className={formLabelClass}>Tanggal</label>
-          <input type="date" id="tanggal" value={tanggal} onChange={(e) => setTanggal(e.target.value)} className={formInputClass} required disabled={loading} />
-        </div>
-        <div>
-          <label htmlFor="foto" className={formLabelClass}>Ambil Foto atau Upload Foto</label>
-          <input type="file" id="foto" onChange={handleFileChange} className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" disabled={loading} />
-        </div>
-        <div>
-          <button type="submit" className="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-blue-300" disabled={loading}>
-            {loading ? 'Menyimpan...' : 'Simpan Pengeluaran'}
-          </button>
-        </div>
-      </form>
-    </div>
+    <Card className="max-w-2xl mx-auto">
+      <CardHeader>
+        <CardTitle className="text-2xl">Tambah Pengeluaran Baru</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+            <FormField
+              control={form.control}
+              name="jenis_pengeluaran"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Jenis Pengeluaran</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger><SelectValue placeholder="Pilih jenis pengeluaran" /></SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="Material Bangunan">Material Bangunan</SelectItem>
+                      <SelectItem value="Upah Tukang">Upah Tukang</SelectItem>
+                      <SelectItem value="Instalasi Listrik">Instalasi Listrik</SelectItem>
+                      <SelectItem value="Konsumsi">Konsumsi</SelectItem>
+                      <SelectItem value="Tidak Terduga">Tidak Terduga</SelectItem>
+                      <SelectItem value="Biaya Tambahan">Biaya Tambahan</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="deskripsi"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Deskripsi</FormLabel>
+                  <FormControl>
+                    <Textarea placeholder="Contoh: Beli 10 sak semen tiga roda" {...field} />
+                  </FormControl>
+                  <FormDescription>Deskripsi singkat (opsional).</FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="biaya"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Biaya</FormLabel>
+                  <FormControl>
+                    <Input type="number" placeholder="550000" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="tanggal"
+              render={({ field }) => (
+                <FormItem className="flex flex-col">
+                  <FormLabel>Tanggal</FormLabel>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
+                          {field.value ? format(field.value, "PPP") : <span>Pilih tanggal</span>}
+                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus />
+                    </PopoverContent>
+                  </Popover>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+             <FormField
+              control={form.control}
+              name="foto"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Upload Foto</FormLabel>
+                  <FormControl>
+                    <Input type="file" onChange={(e) => field.onChange(e.target.files ? e.target.files[0] : null)} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <Button type="submit" disabled={loading} className="w-full">
+              {loading ? "Menyimpan..." : "Simpan Pengeluaran"}
+            </Button>
+          </form>
+        </Form>
+      </CardContent>
+    </Card>
   );
 };
 

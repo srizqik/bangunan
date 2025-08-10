@@ -1,12 +1,17 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 
 const LoginPromptModal = ({ isOpen, onClose }) => {
   const navigate = useNavigate();
-
-  if (!isOpen) {
-    return null;
-  }
 
   const handleLoginRedirect = () => {
     onClose();
@@ -14,32 +19,20 @@ const LoginPromptModal = ({ isOpen, onClose }) => {
   };
 
   return (
-    <div
-      className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50"
-      onClick={onClose}
-    >
-      <div
-        className="bg-white p-8 rounded-lg shadow-xl text-center max-w-sm w-full"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <h3 className="text-xl font-bold mb-4">Aksi Dibatasi</h3>
-        <p className="text-gray-600 mb-6">Anda harus login terlebih dahulu untuk dapat mengedit atau menghapus data.</p>
-        <div className="flex justify-center gap-4">
-          <button
-            onClick={onClose}
-            className="py-2 px-6 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold rounded-md"
-          >
-            Tutup
-          </button>
-          <button
-            onClick={handleLoginRedirect}
-            className="py-2 px-6 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-md"
-          >
-            Login
-          </button>
-        </div>
-      </div>
-    </div>
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Aksi Dibatasi</DialogTitle>
+          <DialogDescription>
+            Anda harus login terlebih dahulu untuk dapat mengedit atau menghapus data.
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <Button variant="ghost" onClick={onClose}>Tutup</Button>
+          <Button onClick={handleLoginRedirect}>Login</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 };
 
