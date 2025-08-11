@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/services/supabaseClient';
+import { useAuth } from '@/context/AuthContext'; // Import useAuth
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -29,6 +30,7 @@ const formSchema = z.object({
 const AddExpensePage = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { user } = useAuth(); // Get the user from auth context
 
   const form = useForm({
     resolver: zodResolver(formSchema),
@@ -41,12 +43,17 @@ const AddExpensePage = () => {
   });
 
   const onSubmit = async (values) => {
+    if (!user) {
+      toast.error("Anda harus login untuk menyimpan data.");
+      return;
+    }
+
     setLoading(true);
     try {
       let imageUrl = null;
       if (values.foto) {
         const fileExt = values.foto.name.split('.').pop();
-        const fileName = `${Date.now()}.${fileExt}`;
+        const fileName = `${user.id}-${Date.now()}.${fileExt}`; // Prefix with user id for better organization
         const filePath = `public/${fileName}`;
         const { error: uploadError } = await supabase.storage.from('expense-photos').upload(filePath, values.foto);
         if (uploadError) throw uploadError;
@@ -54,15 +61,18 @@ const AddExpensePage = () => {
         imageUrl = urlData.publicUrl;
       }
 
+      const expenseData = {
+        jenis_pengeluaran: values.jenis_pengeluaran,
+        deskripsi: values.deskripsi,
+        biaya: values.biaya,
+        tanggal: format(values.tanggal, "yyyy-MM-dd"),
+        image_url: imageUrl,
+        user_id: user.id, // Add the user_id to the insert object
+      };
+
       const { error: insertError } = await supabase
         .from('expenses')
-        .insert([{
-          jenis_pengeluaran: values.jenis_pengeluaran,
-          deskripsi: values.deskripsi,
-          biaya: values.biaya,
-          tanggal: format(values.tanggal, "yyyy-MM-dd"),
-          image_url: imageUrl,
-        }]);
+        .insert([expenseData]);
 
       if (insertError) throw insertError;
 
