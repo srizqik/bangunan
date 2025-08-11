@@ -11,6 +11,7 @@ import ProtectedRoute from './components/ProtectedRoute'
 import App from './App.jsx'
 import HomePage from './pages/HomePage.jsx'
 import AddExpensePage from './pages/AddExpensePage.jsx'
+import EditExpensePage from './pages/EditExpensePage.jsx' // Import the new page
 import LoginPage from './pages/LoginPage.jsx'
 
 const router = createBrowserRouter([
@@ -27,6 +28,14 @@ const router = createBrowserRouter([
         element: (
           <ProtectedRoute>
             <AddExpensePage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'edit/:id', // Add the new dynamic route
+        element: (
+          <ProtectedRoute>
+            <EditExpensePage />
           </ProtectedRoute>
         ),
       },

@@ -114,6 +114,7 @@ const AddExpensePage = () => {
                       <SelectItem value="Konsumsi">Konsumsi</SelectItem>
                       <SelectItem value="Tidak Terduga">Tidak Terduga</SelectItem>
                       <SelectItem value="Biaya Tambahan">Biaya Tambahan</SelectItem>
+                      <SelectItem value="Lainnya">Lainnya</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />

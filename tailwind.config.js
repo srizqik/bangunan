@@ -1,4 +1,5 @@
 import tailwindcssAnimate from "tailwindcss-animate";
+import radixPlugin from "tailwindcss-radix";
 
 /** @type {import('tailwindcss').Config} */
 export default {
@@ -73,5 +74,5 @@ export default {
       },
     },
   },
-  plugins: [tailwindcssAnimate],
+  plugins: [tailwindcssAnimate, radixPlugin],
 }
