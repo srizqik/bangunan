@@ -108,6 +108,7 @@ const AddExpensePage = () => {
                       <SelectTrigger><SelectValue placeholder="Pilih jenis pengeluaran" /></SelectTrigger>
                     </FormControl>
                     <SelectContent>
+                      <SelectItem value="Ka Malik">Ka Malik</SelectItem>
                       <SelectItem value="Material Bangunan">Material Bangunan</SelectItem>
                       <SelectItem value="Upah Tukang">Upah Tukang</SelectItem>
                       <SelectItem value="Instalasi Listrik">Instalasi Listrik</SelectItem>

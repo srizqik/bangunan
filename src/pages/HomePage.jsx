@@ -33,7 +33,7 @@ const HomePage = () => {
   const [isLoginPromptOpen, setIsLoginPromptOpen] = useState(false);
   const [expenseToDelete, setExpenseToDelete] = useState(null);
 
-  const jenisOptions = ['Semua', 'Material Bangunan', 'Upah Tukang', 'Instalasi Listrik', 'Konsumsi', 'Tidak Terduga', 'Biaya Tambahan', 'Lainnya'];
+  const jenisOptions = ['Semua', 'Ka Malik', 'Material Bangunan', 'Upah Tukang', 'Instalasi Listrik', 'Konsumsi', 'Tidak Terduga', 'Biaya Tambahan', 'Lainnya'];
 
   useEffect(() => { fetchExpenses(); }, []);
 
