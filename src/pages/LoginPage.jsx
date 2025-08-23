@@ -43,15 +43,15 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen">
-      <Card className="w-full max-w-sm">
-        <CardHeader>
-          <CardTitle className="text-2xl">Login</CardTitle>
-          <CardDescription>
-            Masukkan email dan password Anda untuk mengakses panel admin.
-          </CardDescription>
-        </CardHeader>
-        <form onSubmit={handleLogin}>
+    <div className="flex items-center justify-center min-h-screen p-4">
+      <form onSubmit={handleLogin} className="w-full max-w-sm">
+        <Card>
+          <CardHeader className="text-center">
+            <CardTitle className="text-2xl">Login</CardTitle>
+            <CardDescription>
+              Masukkan email dan password untuk mengakses panel admin.
+            </CardDescription>
+          </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
@@ -62,6 +62,7 @@ const LoginPage = () => {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                disabled={loading}
               />
             </div>
             <div className="space-y-2">
@@ -72,6 +73,7 @@ const LoginPage = () => {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                disabled={loading}
               />
             </div>
           </CardContent>
@@ -80,8 +82,8 @@ const LoginPage = () => {
               {loading ? "Logging in..." : "Login"}
             </Button>
           </CardFooter>
-        </form>
-      </Card>
+        </Card>
+      </form>
     </div>
   );
 };
