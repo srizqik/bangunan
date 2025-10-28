@@ -17,7 +17,11 @@ import LoginPage from './pages/LoginPage.jsx'
 const router = createBrowserRouter([
   {
     path: '/',
-    element: <App />,
+    element: (
+      <ProtectedRoute>
+        <App />
+      </ProtectedRoute>
+    ),
     children: [
       {
         index: true,
@@ -25,19 +29,11 @@ const router = createBrowserRouter([
       },
       {
         path: 'add',
-        element: (
-          <ProtectedRoute>
-            <AddExpensePage />
-          </ProtectedRoute>
-        ),
+        element: <AddExpensePage />,
       },
       {
         path: 'edit/:id', // Add the new dynamic route
-        element: (
-          <ProtectedRoute>
-            <EditExpensePage />
-          </ProtectedRoute>
-        ),
+        element: <EditExpensePage />,
       },
     ],
   },
