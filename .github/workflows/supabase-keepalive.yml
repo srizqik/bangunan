@@ -1,0 +1,43 @@
+name: Keep Supabase Active
+
+on:
+  schedule:
+    # Berjalan setiap 6 jam (pukul 00:00, 06:00, 12:00, 18:00 UTC)
+    - cron: '0 */6 * * *'
+  workflow_dispatch: # Tombol manual run
+
+jobs:
+  keep-alive:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Check Supabase Status
+        run: |
+          echo "🔄 Checking Supabase at $(date)"
+          
+          # Ping Supabase REST API
+          response=$(curl -s -o /dev/null -w "%{http_code}" \
+            "${{ secrets.SUPABASE_URL }}/rest/v1/" \
+            -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}")
+          
+          echo "HTTP Response Code: $response"
+          
+          # Status 200 (OK) atau 401 (Unauthorized tapi server aktif) = sukses
+          if [ $response -eq 200 ] || [ $response -eq 401 ] || [ $response -eq 404 ]; then
+            echo "✅ Supabase is ACTIVE!"
+          else
+            echo "❌ Unexpected response: $response"
+            exit 1
+          fi
+      
+      - name: Query Database (Alternative)
+        run: |
+          echo "📊 Testing database connection..."
+          
+          # Ganti 'your_table' dengan nama tabel yang ada di database Anda
+          # Jika tidak punya tabel, skip step ini atau query ke tabel system
+          curl -s "${{ secrets.SUPABASE_URL }}/rest/v1/?select=*&limit=1" \
+            -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
+            || echo "⚠️  Database query failed (might be expected if no tables exist)"
